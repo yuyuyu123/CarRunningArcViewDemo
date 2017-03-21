@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CarRunningArcView">
+        <attr name="arcInsideColor" format="color"/>
+        <attr name="arcOutSideColor" format="color"/>
+        <attr name="arcInsideStroke" format="dimension"/>
+        <attr name="arcOutSideStroke" format="dimension"/>
+        <attr name="radius" format="dimension"/>
+        <attr name="sleepTime" format="integer"/>
+        <attr name="ratio" format="float"/>
+    </declare-styleable>
+</resources>
