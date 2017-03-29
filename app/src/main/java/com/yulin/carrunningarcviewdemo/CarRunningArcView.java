@@ -13,7 +13,6 @@ import android.graphics.PathMeasure;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -80,6 +79,8 @@ public class CarRunningArcView extends View {
     private int mDegreeAnticlockwise = 180;
 
     private boolean isReInitialing = false;
+
+    private boolean exit = false;
 
     private static Handler mHandler = new Handler();
 
@@ -287,8 +288,6 @@ public class CarRunningArcView extends View {
         canvas.drawBitmap(mBitmap, mMatrix, mPaintOutside);
     }
 
-    private boolean exit = false;
-
     public boolean isExit() {
         return exit;
     }
@@ -301,45 +300,45 @@ public class CarRunningArcView extends View {
         while (!exit) {
             if(mCarState == CarState.MOVING_CLOCKWISE) {//正在顺时针跑
                 if (mProgress < mSwipeAngle * mRatio) {
-                    myMovingClockwise();
+                    movingClockwise();
                 } else {
-                   myMovedClockwise();
+                   movedClockwise();
                 }
             }
 
             if(mCarState == CarState.ROTATING_CLOCKWISE) {//正在顺时针转
                 if(mDegreeClockwise < 180) {
-                    myRotatingClockwise();
+                    rotatingClockwise();
                 } else {//顺时针转完毕
-                    myRotatedClockwise();
+                    rotatedClockwise();
                 }
             }
 
             if(mCarState == CarState.MOVING_ANTICLOCKWISE) {//正在逆时针跑
                 if (mProgress > mSwipeAngle * mRatio) {
-                    myMovingAnticlockwise();
+                    movingAnticlockwise();
                 } else {//逆时针跑完,如果跑到了0点，则要逆时针转一圈
                     if(mProgress > 0) {
-                        myMovedAnticlockwise1();
+                        movedAnticlockwise1();
                         break;
                     } else {
-                       myMovedAnticlockwise2();
+                       movedAnticlockwise2();
                     }
                 }
             }
 
             if(mCarState == CarState.ROTATING_ANTICLOCKWISE) {//正在逆时针转
                 if(mDegreeAnticlockwise > 0) {
-                    myRotatingAnticlockwise();
+                    rotatingAnticlockwise();
                 } else {//逆时针旋转完毕
-                    myRotatedAnticlockwise();
+                    rotatedAnticlockwise();
                 }
             }
 
         }
     }
 
-    private void myRotatingAnticlockwise() {
+    private void rotatingAnticlockwise() {
         try {
             Thread.sleep(5);
         } catch (InterruptedException e) {
@@ -350,7 +349,7 @@ public class CarRunningArcView extends View {
         postInvalidate();
     }
 
-    private void myRotatingClockwise() {
+    private void rotatingClockwise() {
         try {
             Thread.sleep(5);
         } catch (InterruptedException e) {
@@ -361,7 +360,7 @@ public class CarRunningArcView extends View {
         postInvalidate();
     }
 
-    private void myMovingClockwise() {
+    private void movingClockwise() {
         try {
             Thread.sleep(mSleepTime);
         } catch (InterruptedException e) {
@@ -373,7 +372,7 @@ public class CarRunningArcView extends View {
         postInvalidate();
     }
 
-    private void myMovedClockwise() {
+    private void movedClockwise() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -388,7 +387,7 @@ public class CarRunningArcView extends View {
         },50);
     }
 
-    private void myMovingAnticlockwise() {
+    private void movingAnticlockwise() {
         try {
             Thread.sleep(mSleepTime);
         } catch (InterruptedException e) {
@@ -399,28 +398,28 @@ public class CarRunningArcView extends View {
         postInvalidate();
     }
 
-    private void myMovedAnticlockwise1() {
+    private void movedAnticlockwise1() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                Log.e("JP", "myMovedAnticlockwise1");
+                Log.e("JP", "movedAnticlockwise1");
                 mCarState = CarState.MOVED_ANTICLOCKWISE;
             }
         },50);
     }
 
-    private void myMovedAnticlockwise2() {
+    private void movedAnticlockwise2() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                Log.e("JP", "myMovedAnticlockwise2");
+                Log.e("JP", "movedAnticlockwise2");
                 mCarState = CarState.MOVED_ANTICLOCKWISE;
                 mCarState = CarState.ROTATING_ANTICLOCKWISE;
             }
         },50);
     }
 
-    private void myRotatedClockwise() {
+    private void rotatedClockwise() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -439,7 +438,7 @@ public class CarRunningArcView extends View {
         isReInitialing = reInitialing;
     }
 
-    private void myRotatedAnticlockwise() {
+    private void rotatedAnticlockwise() {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -473,7 +472,7 @@ public class CarRunningArcView extends View {
      *
      * @return
      */
-    public   double getRatio() {
+    public double getRatio() {
         return mRatio;
     }
 

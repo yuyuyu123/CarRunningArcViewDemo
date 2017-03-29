@@ -8,14 +8,13 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
 /**
- * Created by Administrator on 2017/3/28 0028.
+ * Created by YuLin on 2017/3/28 0028.
  */
 
 public class CarLoadingViewTwoActivity extends AppCompatActivity{
 
     private CarLoadingViewTwo mCarAnotherLoadingView;
 
-    private int progress;
     private double ratio = 0;
 
     private Handler mHandler = new Handler() {
@@ -24,10 +23,7 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-//                    if(progress < 240) {
                     if(ratio <= 1) {
-//                        progress += 1;
-//                        mCarAnotherLoadingView.setProgress(progress);
                         ratio += 0.01;
                         mCarAnotherLoadingView.setRatio(ratio);
                         mHandler.sendEmptyMessageDelayed(1, 150);

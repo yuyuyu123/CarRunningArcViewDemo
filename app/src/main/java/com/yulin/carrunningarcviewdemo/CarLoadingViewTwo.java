@@ -17,7 +17,9 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
-
+/**
+ * Created by YuLin on 2017/3/28 0028.
+ */
 public class CarLoadingViewTwo extends View {
     private static final String TAG = CarLoadingViewTwo.class.getSimpleName();
 
