@@ -15,8 +15,10 @@ import android.graphics.SweepGradient;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
+
 /**
  * Created by YuLin on 2017/3/28 0028.
  */
@@ -63,6 +65,9 @@ public class CarLoadingViewTwo extends View {
     private float mPositions[];
     private SweepGradient mSweepGradient;
     private int[] mArcInsideColors;
+
+    private int lastProgress = 0;
+    private boolean isReset = false;
 
     public CarLoadingViewTwo(Context context) {
         this(context, null);
@@ -118,14 +123,28 @@ public class CarLoadingViewTwo extends View {
             @Override
             public void run() {
                 while (true) {
-                    if(mProgress < mSwipeAngle) {
-                        mProgress = getProgress();
-                        setCurrentValue();
-                        postInvalidate();
-                        try {
-                            Thread.sleep(10);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                    if (mProgress < mSwipeAngle) {
+                        while (currentProgress > getProgress()) {
+                            currentProgress--;
+                            setCurrentValue();
+                            postInvalidate();
+                            try {
+                                Thread.sleep(10);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        while (currentProgress < getProgress()) {
+                            isReset = false;
+                            currentProgress++;
+                            setCurrentValue();
+                            postInvalidate();
+                            try {
+                                Thread.sleep(10);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -133,6 +152,18 @@ public class CarLoadingViewTwo extends View {
         }).start();
 
     }
+
+    private boolean isBackFinished = true;
+
+    public boolean isBackFinished() {
+        return isBackFinished;
+    }
+
+    public void setBackFinished(boolean backFinished) {
+        isBackFinished = backFinished;
+    }
+
+    private int currentProgress;
 
     private void initPaint() {
         mPaintInside = getPaint(false);
@@ -145,7 +176,7 @@ public class CarLoadingViewTwo extends View {
         paint.setAntiAlias(true);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStyle(Paint.Style.STROKE);
-        if(isOutside) {
+        if (isOutside) {
             paint.setStrokeWidth(mArcOutSideStroke);
         } else {
             paint.setStrokeWidth(mArcInsideStroke);
@@ -175,10 +206,10 @@ public class CarLoadingViewTwo extends View {
     }
 
     public void setColors(int[] colors) {
-        if(null == colors || 0 == colors.length) {
+        if (null == colors || 0 == colors.length) {
             throw new NullPointerException("the color array that you defined must not be null.");
         }
-        if(colors.length < 2) {
+        if (colors.length < 2) {
             throw new IllegalArgumentException("you must specify at least two kinds of colors.");
         }
         mArcInsideColors = colors;
@@ -188,7 +219,8 @@ public class CarLoadingViewTwo extends View {
         mBitmap = BitmapFactory.decodeResource(this.getContext().getResources(), R.mipmap.icon_big_car);
     }
 
-    @Override protected void onSizeChanged(int w, int h, int oldW, int oldH) {
+    @Override
+    protected void onSizeChanged(int w, int h, int oldW, int oldH) {
         super.onSizeChanged(w, h, oldW, oldH);
         mWidth = w;
         mHeight = h;
@@ -198,14 +230,15 @@ public class CarLoadingViewTwo extends View {
             mRadius = Math.min(mWidth / 2, mHeight / 2) - mArcOutSideStroke;
         }
         mRectOval = new RectF(mCenterX - mRadius, mCenterY - mRadius, mCenterX + mRadius, mCenterY + mRadius);
-        mPositions = new float[]{0f,0.35f,0.55f,0.65f};
+        mPositions = new float[]{0f, 0.35f, 0.55f, 0.65f};
         mSweepGradient = new SweepGradient(mCenterX, mCenterX, mArcInsideColors, mPositions);
         final float rotationDegrees = mSwipeAngle * 1.0f / 2;
         mMatrix.setRotate(rotationDegrees, mCenterX, mCenterX);
         mSweepGradient.setLocalMatrix(mMatrix);
     }
 
-    @Override protected void onDraw(Canvas canvas) {
+    @Override
+    protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         drawArcInside(canvas);
         drawArcOutside(canvas);
@@ -230,10 +263,10 @@ public class CarLoadingViewTwo extends View {
      * @param ratio
      */
     public void setRatio(double ratio) {
-        if(ratio < 0) {
+        if (ratio < 0) {
             ratio = 0;
         }
-        if(ratio > 1) {
+        if (ratio > 1) {
             ratio = 1;
         }
         this.mRatio = ratio;
@@ -247,8 +280,8 @@ public class CarLoadingViewTwo extends View {
      */
     private void drawArcOutside(Canvas canvas) {
         mPath.reset();
-        mPath.addArc(mRectOval, mStartAngle + mProgress, mSwipeAngle - mProgress);
-        mPathMeasure.setPath(mPath,false);
+        mPath.addArc(mRectOval, mStartAngle + currentProgress, mSwipeAngle - currentProgress);
+        mPathMeasure.setPath(mPath, false);
         mPathMeasure.getPosTan(mPathMeasure.getLength() * mCurrentValue, mPos, mTan);
         mPaintOutside.setShader(mSweepGradient);
         canvas.drawPath(mPath, mPaintOutside);
@@ -256,12 +289,13 @@ public class CarLoadingViewTwo extends View {
 
     /**
      * Draw the arc loading which covers the arc outside(rainbow).
+     *
      * @param canvas
      */
     private void drawArcLoading(Canvas canvas) {
         mPath.reset();
-        mPath.addArc(mRectOval, mStartAngle, mProgress == 0 ? 0.01f : mProgress);
-        mPathMeasure.setPath(mPath,false);
+        mPath.addArc(mRectOval, mStartAngle, currentProgress == 0 ? 0.01f : currentProgress);
+        mPathMeasure.setPath(mPath, false);
         mPathMeasure.getPosTan(mPathMeasure.getLength() * mCurrentValue, mPos, mTan);
 
         mBitmapDegrees = (float) (Math.atan2(mTan[1], mTan[0]) * 180.0 / Math.PI);
@@ -281,8 +315,9 @@ public class CarLoadingViewTwo extends View {
     /**
      * Set current value([0,1])
      */
-    private  void setCurrentValue() {
-        mCurrentValue += mProgress * 1.0 / mSwipeAngle;
+    private void setCurrentValue() {
+//        mCurrentValue += mProgress * 1.0 / mSwipeAngle;
+        mCurrentValue += currentProgress * 1.0 / mSwipeAngle;
         if (mCurrentValue >= 1) {
             mCurrentValue = 1;
         }
@@ -293,7 +328,7 @@ public class CarLoadingViewTwo extends View {
      *
      * @return
      */
-    public   double getRatio() {
+    public double getRatio() {
         return mRatio;
     }
 
@@ -351,7 +386,8 @@ public class CarLoadingViewTwo extends View {
         };
     }
 
-    @Override public Parcelable onSaveInstanceState() {
+    @Override
+    public Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
         SavedState ss = new SavedState(superState);
         ss.progress = mProgress;
@@ -363,7 +399,8 @@ public class CarLoadingViewTwo extends View {
         return ss;
     }
 
-    @Override public void onRestoreInstanceState(Parcelable state) {
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
         SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
         setProgress(ss.progress);
@@ -473,6 +510,7 @@ public class CarLoadingViewTwo extends View {
 
     /**
      * Get the bitmap using for moving forward or back.
+     *
      * @return
      */
     public Bitmap getBitmap() {
@@ -481,10 +519,11 @@ public class CarLoadingViewTwo extends View {
 
     /**
      * Set the bitmap using for moving forward or back.
+     *
      * @param bitmap
      */
     public void setBitmap(Bitmap bitmap) {
-        if(null == bitmap) {
+        if (null == bitmap) {
             throw new NullPointerException("the bitmap that you specified must not be null.");
         }
         this.mBitmap = bitmap;

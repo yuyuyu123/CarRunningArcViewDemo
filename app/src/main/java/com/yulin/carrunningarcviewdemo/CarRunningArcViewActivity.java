@@ -7,7 +7,9 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
-
+/**
+ * Created by YuLin on 2017/3/28 0028.
+ */
 public class CarRunningArcViewActivity extends AppCompatActivity {
     private CarRunningArcView mCarRunningArcView;
     private float mRatio = 1.0f;

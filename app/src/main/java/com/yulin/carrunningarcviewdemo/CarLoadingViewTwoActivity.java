@@ -6,16 +6,18 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 /**
  * Created by YuLin on 2017/3/28 0028.
  */
-
 public class CarLoadingViewTwoActivity extends AppCompatActivity{
 
     private CarLoadingViewTwo mCarAnotherLoadingView;
 
-    private double ratio = 0;
+    private double mRatio = 0;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -23,15 +25,30 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-                    if(ratio <= 1) {
-                        ratio += 0.01;
-                        mCarAnotherLoadingView.setRatio(ratio);
-                        mHandler.sendEmptyMessageDelayed(1, 150);
+                    Log.e("JP", "收到消息--->" + msg.what);
+                    if(mRatio <= 1) {
+                        mRatio += 0.01;
+                        mCarAnotherLoadingView.setRatio(mRatio);
+                        mHandler.sendEmptyMessageDelayed(1, 300);
                     }
+                    break;
+                case 2:
+                    txtContinue.setText("续订中.");
+                    mHandler.sendEmptyMessageDelayed(3,500);
+                    break;
+                case 3:
+                    txtContinue.setText("续订中..");
+                    mHandler.sendEmptyMessageDelayed(4,500);
+                    break;
+                case 4:
+                    txtContinue.setText("续订中...");
+                    mHandler.sendEmptyMessageDelayed(2,500);
                     break;
             }
         }
     };
+
+    TextView txtContinue;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +56,7 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
         mCarAnotherLoadingView = (CarLoadingViewTwo) findViewById(R.id.id_car_another_loading);
         mCarAnotherLoadingView.setColors(getColors());
         mHandler.sendEmptyMessage(1);
+        txtContinue = (TextView) findViewById(R.id.id_continue_tip);
 
     }
 
@@ -57,5 +75,27 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
         } else {
             return this.getResources().getColor(res);
         }
+    }
+
+    public void ratioDown(View view) {
+//        mHandler.removeCallbacksAndMessages(null);
+        mCarAnotherLoadingView.setBackFinished(false);
+        txtContinue.setVisibility(View.VISIBLE);
+        mHandler.sendEmptyMessage(2);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mRatio = 0.2;
+                mHandler.sendEmptyMessage(1);
+                txtContinue.setText("续订成功");
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtContinue.setText("续订中...");
+                        txtContinue.setVisibility(View.GONE);
+                    }
+                },1000);
+            }
+        },5000);
     }
 }

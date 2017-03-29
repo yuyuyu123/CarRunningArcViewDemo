@@ -10,11 +10,10 @@ import android.support.v7.app.AppCompatActivity;
 /**
  * Created by YuLin on 2017/3/28 0028.
  */
-
 public class CarLoadingViewOneActivity extends AppCompatActivity {
 
     private CarLoadingViewOne mCarLoadingView;
-    private double ratio = 0;
+    private double mRatio = 0;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -22,9 +21,9 @@ public class CarLoadingViewOneActivity extends AppCompatActivity {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-                    if(ratio <= 1) {
-                        ratio += 0.01;
-                        mCarLoadingView.setRatio(ratio);
+                    if(mRatio <= 1) {
+                        mRatio += 0.01;
+                        mCarLoadingView.setRatio(mRatio);
                         mHandler.sendEmptyMessageDelayed(1, 150);
                     }
                     break;
