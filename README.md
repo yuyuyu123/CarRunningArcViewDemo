@@ -4,5 +4,5 @@ This view is based on [CustomArcView](https://github.com/yuyuyu123/CustomArcView
 
 # Effects:
 
-   ![image](https://github.com/yuyuyu123/CarRunningArcViewDemo/blob/master/screenshot.gif)
+   ![image](https://github.com/yuyuyu123/CarRunningArcViewDemo/blob/master/screenshot1.gif)
   
