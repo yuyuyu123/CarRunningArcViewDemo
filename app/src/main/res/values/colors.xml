@@ -5,9 +5,8 @@
     <color name="colorAccent">#FF4081</color>
 
 
-    <color name="color1">#5bb5eb</color>
-    <color name="color2">#8bd07c</color>
-    <color name="color3">#e8dd5f</color>
-    <color name="color4">#e97e5a</color>
-    <color name="color5">#ea4646</color>
+    <color name="color1">#1FBBA6</color>
+    <color name="color2">#4CBD8F</color>
+    <color name="color3">#EA8519</color>
+    <color name="color4">#AE1A2E</color>
 </resources>

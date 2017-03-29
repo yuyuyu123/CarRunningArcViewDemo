@@ -12,23 +12,14 @@ import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
-/**
- * Created by YuLin on 2017/3/20 0020.
- * An android custom widget called CarRunningArcView,which has the effect that a car(maybe other icon)
- * can run on an arc forward and back.And you can transform it to a count down timer view or a loading
- * view with arc shape and etc.
- */
-public class CarRunningArcView extends View {
-    private static final String TAG = CarRunningArcView.class.getSimpleName();
+public class CarLoadingViewTwo extends View {
+    private static final String TAG = CarLoadingViewTwo.class.getSimpleName();
 
     private static final float DEFAULT_STROKE = 15;
     private static final float DEFAULT_START_ANGLE = 150;
@@ -37,6 +28,7 @@ public class CarRunningArcView extends View {
 
     private Paint mPaintInside;
     private Paint mPaintOutside;
+    private Paint mPaintLoading;
 
     private int mWidth;
     private int mHeight;
@@ -62,48 +54,23 @@ public class CarRunningArcView extends View {
     private PathMeasure mPathMeasure;
     private float mBitmapDegrees = 0f;
 
-    private float mCurrentValue = 0;     // 用于纪录当前的位置,取值范围[0,1]映射Path的整个长度
-    private float[] mPos;                // 当前点的实际位置
-    private float[] mTan;                // 当前点的tangent值,用于计算图片所需旋转的角度
+    private float mCurrentValue = 0;
+    private float[] mPos;
+    private float[] mTan;
 
     private float mPositions[];
     private SweepGradient mSweepGradient;
     private int[] mArcInsideColors;
 
-    /**
-     * Degree offset for rotating clockwise.
-     */
-    private int mDegreeClockwise = 0;
-    /**
-     * Degree offset for rotating anticlockwise.
-     */
-    private int mDegreeAnticlockwise = 180;
-
-    private boolean isReInitialing = false;
-
-    private static Handler mHandler = new Handler();
-
-    private CarState mCarState = CarState.MOVED_CLOCKWISE;
-
-    /**
-     * The icon's state.
-     */
-    public enum CarState {
-        //Moving state.
-        MOVING_CLOCKWISE, MOVED_CLOCKWISE, MOVING_ANTICLOCKWISE, MOVED_ANTICLOCKWISE,
-         //Rotation state.
-        ROTATING_CLOCKWISE, ROTATED_CLOCKWISE, ROTATING_ANTICLOCKWISE, ROTATED_ANTICLOCKWISE
-    }
-
-    public CarRunningArcView(Context context) {
+    public CarLoadingViewTwo(Context context) {
         this(context, null);
     }
 
-    public CarRunningArcView(Context context, AttributeSet attrs) {
+    public CarLoadingViewTwo(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public CarRunningArcView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CarLoadingViewTwo(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.CarRunningArcView);
@@ -144,12 +111,31 @@ public class CarRunningArcView extends View {
 
         initOther();
 
-        setRatio(mRatio,mCarState);
+        setProgress(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    if(mProgress < mSwipeAngle) {
+                        mProgress = getProgress();
+                        setCurrentValue();
+                        postInvalidate();
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }).start();
+
     }
 
     private void initPaint() {
         mPaintInside = getPaint(false);
         mPaintOutside = getPaint(true);
+        mPaintLoading = getPaintLoading();
     }
 
     private Paint getPaint(boolean isOutside) {
@@ -162,8 +148,19 @@ public class CarRunningArcView extends View {
         } else {
             paint.setStrokeWidth(mArcInsideStroke);
             paint.setColor(mArcInsideColor);
-            paint.setAlpha(20);
+            paint.setAlpha(15);
         }
+        return paint;
+    }
+
+    private Paint getPaintLoading() {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(mArcOutSideStroke - 3);
+        paint.setColor(Color.WHITE);
+        paint.setAlpha(30);
         return paint;
     }
 
@@ -199,10 +196,9 @@ public class CarRunningArcView extends View {
             mRadius = Math.min(mWidth / 2, mHeight / 2) - mArcOutSideStroke;
         }
         mRectOval = new RectF(mCenterX - mRadius, mCenterY - mRadius, mCenterX + mRadius, mCenterY + mRadius);
+        mPositions = new float[]{0f,0.35f,0.55f,0.65f};
         mSweepGradient = new SweepGradient(mCenterX, mCenterX, mArcInsideColors, mPositions);
-
-        mPositions = new float[]{0f,0.5f,0.8f,0.9f};
-        final float rotationDegrees = mSwipeAngle * 1.0f / 6;
+        final float rotationDegrees = mSwipeAngle * 1.0f / 2;
         mMatrix.setRotate(rotationDegrees, mCenterX, mCenterX);
         mSweepGradient.setLocalMatrix(mMatrix);
     }
@@ -211,6 +207,8 @@ public class CarRunningArcView extends View {
         super.onDraw(canvas);
         drawArcInside(canvas);
         drawArcOutside(canvas);
+        drawArcLoading(canvas);
+
     }
 
     /**
@@ -224,34 +222,21 @@ public class CarRunningArcView extends View {
         canvas.drawPath(mPath, mPaintInside);
     }
 
-    public CarState getCarState() {
-        return mCarState;
-    }
-
-    public void setCarState(CarState mCarState) {
-        this.mCarState = mCarState;
-    }
-
     /**
      * Set ratio which makes influenced on the arc outside's swipe angle.
      *
      * @param ratio
      */
-    public void setRatio(double ratio, CarState state) {
+    public void setRatio(double ratio) {
+        if(ratio < 0) {
+            ratio = 0;
+        }
+        if(ratio > 1) {
+            ratio = 1;
+        }
         this.mRatio = ratio;
-        setCarState(state);
-        setExit(false);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                running();
-            }
-        }).start();
+        setProgress((int) (mSwipeAngle * ratio));
     }
-
-    /**
-     * 如果只是进度条，只要设置进度就可以了，只要开启一个线程
-     */
 
     /**
      * Draw the arc outside for current progress.
@@ -260,198 +245,31 @@ public class CarRunningArcView extends View {
      */
     private void drawArcOutside(Canvas canvas) {
         mPath.reset();
+        mPath.addArc(mRectOval, mStartAngle + mProgress, mSwipeAngle - mProgress);
+        mPathMeasure.setPath(mPath,false);
+        mPathMeasure.getPosTan(mPathMeasure.getLength() * mCurrentValue, mPos, mTan);
+        mPaintOutside.setShader(mSweepGradient);
+        canvas.drawPath(mPath, mPaintOutside);
+    }
+
+    /**
+     * Draw the arc loading which covers the arc outside(rainbow).
+     * @param canvas
+     */
+    private void drawArcLoading(Canvas canvas) {
+        mPath.reset();
         mPath.addArc(mRectOval, mStartAngle, mProgress == 0 ? 0.01f : mProgress);
         mPathMeasure.setPath(mPath,false);
         mPathMeasure.getPosTan(mPathMeasure.getLength() * mCurrentValue, mPos, mTan);
+
         mBitmapDegrees = (float) (Math.atan2(mTan[1], mTan[0]) * 180.0 / Math.PI);
-
-        Log.e("JP", "mBitmapDegrees--->" + mBitmapDegrees);
-        if(mCarState == CarState.ROTATING_CLOCKWISE) {
-            mBitmapDegrees += mDegreeClockwise;
-        }
-
-        if (mCarState ==CarState.MOVING_ANTICLOCKWISE) {
-            mBitmapDegrees += 180;
-        }
-
-        if(mCarState == CarState.ROTATING_ANTICLOCKWISE) {
-            mBitmapDegrees += mDegreeAnticlockwise;
-        }
 
         mMatrix.reset();
         mMatrix.postRotate(mBitmapDegrees, mBitmap.getWidth() / 2, mBitmap.getHeight() / 2);
-        mMatrix.postTranslate(mPos[0] - mBitmap.getWidth() / 2, mPos[1] - mBitmap.getHeight() / 2);   // 将图片绘制中心调整到与当前点重合
-
+        mMatrix.postTranslate(mPos[0] - mBitmap.getWidth() / 2, mPos[1] - mBitmap.getHeight() / 2);
         mPaintOutside.setShader(mSweepGradient);
-        canvas.drawPath(mPath, mPaintOutside);
-        canvas.drawBitmap(mBitmap, mMatrix, mPaintOutside);
-    }
-
-    private boolean exit = false;
-
-    public boolean isExit() {
-        return exit;
-    }
-
-    public void setExit(boolean exit) {
-        this.exit = exit;
-    }
-
-    private void running() {
-        while (!exit) {
-            if(mCarState == CarState.MOVING_CLOCKWISE) {//正在顺时针跑
-                if (mProgress < mSwipeAngle * mRatio) {
-                    myMovingClockwise();
-                } else {
-                   myMovedClockwise();
-                }
-            }
-
-            if(mCarState == CarState.ROTATING_CLOCKWISE) {//正在顺时针转
-                if(mDegreeClockwise < 180) {
-                    myRotatingClockwise();
-                } else {//顺时针转完毕
-                    myRotatedClockwise();
-                }
-            }
-
-            if(mCarState == CarState.MOVING_ANTICLOCKWISE) {//正在逆时针跑
-                if (mProgress > mSwipeAngle * mRatio) {
-                    myMovingAnticlockwise();
-                } else {//逆时针跑完,如果跑到了0点，则要逆时针转一圈
-                    if(mProgress > 0) {
-                        myMovedAnticlockwise1();
-                        break;
-                    } else {
-                       myMovedAnticlockwise2();
-                    }
-                }
-            }
-
-            if(mCarState == CarState.ROTATING_ANTICLOCKWISE) {//正在逆时针转
-                if(mDegreeAnticlockwise > 0) {
-                    myRotatingAnticlockwise();
-                } else {//逆时针旋转完毕
-                    myRotatedAnticlockwise();
-                }
-            }
-
-        }
-    }
-
-    private void myRotatingAnticlockwise() {
-        try {
-            Thread.sleep(5);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mCarState = CarState.ROTATING_ANTICLOCKWISE;
-        mDegreeAnticlockwise--;
-        postInvalidate();
-    }
-
-    private void myRotatingClockwise() {
-        try {
-            Thread.sleep(5);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mCarState = CarState.ROTATING_CLOCKWISE;
-        mDegreeClockwise++;
-        postInvalidate();
-    }
-
-    private void myMovingClockwise() {
-        try {
-            Thread.sleep(mSleepTime);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mCarState = CarState.MOVING_CLOCKWISE;
-        mProgress++;
-        setCurrentValue();
-        postInvalidate();
-    }
-
-    private void myMovedClockwise() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if(mRatio > 0) {
-                    mCarState = CarState.MOVED_CLOCKWISE;//顺时针跑完毕
-                    mCarState = CarState.ROTATING_CLOCKWISE;
-                    setReInitialing(false);
-                } else {
-                    mCarState = null;
-                }
-            }
-        },50);
-    }
-
-    private void myMovingAnticlockwise() {
-        try {
-            Thread.sleep(mSleepTime);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mProgress--;
-        setCurrentValue();
-        postInvalidate();
-    }
-
-    private void myMovedAnticlockwise1() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Log.e("JP", "myMovedAnticlockwise1");
-                mCarState = CarState.MOVED_ANTICLOCKWISE;
-            }
-        },50);
-    }
-
-    private void myMovedAnticlockwise2() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Log.e("JP", "myMovedAnticlockwise2");
-                mCarState = CarState.MOVED_ANTICLOCKWISE;
-                mCarState = CarState.ROTATING_ANTICLOCKWISE;
-            }
-        },50);
-    }
-
-    private void myRotatedClockwise() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mCarState = CarState.ROTATED_CLOCKWISE;
-                mDegreeClockwise = 0;
-                setExit(true);
-            }
-        },50);
-    }
-
-    public boolean isReInitialing() {
-        return isReInitialing;
-    }
-
-    public void setReInitialing(boolean reInitialing) {
-        isReInitialing = reInitialing;
-    }
-
-    private void myRotatedAnticlockwise() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if(!isReInitialing) {
-                    mCarState = CarState.ROTATED_ANTICLOCKWISE;
-                    setExit(true);
-                } else {
-                    mCarState = CarState.MOVING_CLOCKWISE;
-                }
-                mDegreeAnticlockwise = 180;
-            }
-        },50);
+        canvas.drawPath(mPath, mPaintLoading);
+        canvas.drawBitmap(mBitmap, mMatrix, null);
     }
 
     public int getProgress() {
@@ -489,7 +307,7 @@ public class CarRunningArcView extends View {
         float[] tan = new float[2];
 
         /**
-         * Constructor called from {@link CarRunningArcView#onSaveInstanceState()}
+         * Constructor called from {@link CarLoadingViewTwo#onSaveInstanceState()}
          */
         SavedState(Parcelable superState) {
             super(superState);
@@ -520,13 +338,13 @@ public class CarRunningArcView extends View {
         }
 
         public static final Creator<SavedState> CREATOR
-                = new Creator<SavedState>() {
-            public SavedState createFromParcel(Parcel in) {
-                return new SavedState(in);
+                = new Creator<CarLoadingViewTwo.SavedState>() {
+            public CarLoadingViewTwo.SavedState createFromParcel(Parcel in) {
+                return new CarLoadingViewTwo.SavedState(in);
             }
 
-            public SavedState[] newArray(int size) {
-                return new SavedState[size];
+            public CarLoadingViewTwo.SavedState[] newArray(int size) {
+                return new CarLoadingViewTwo.SavedState[size];
             }
         };
     }
