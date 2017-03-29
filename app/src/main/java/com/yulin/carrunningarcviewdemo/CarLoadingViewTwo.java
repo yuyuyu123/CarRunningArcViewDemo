@@ -15,7 +15,6 @@ import android.graphics.SweepGradient;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
@@ -66,8 +65,7 @@ public class CarLoadingViewTwo extends View {
     private SweepGradient mSweepGradient;
     private int[] mArcInsideColors;
 
-    private int lastProgress = 0;
-    private boolean isReset = false;
+    private int mCurrentProgress;
 
     public CarLoadingViewTwo(Context context) {
         this(context, null);
@@ -124,8 +122,8 @@ public class CarLoadingViewTwo extends View {
             public void run() {
                 while (true) {
                     if (mProgress < mSwipeAngle) {
-                        while (currentProgress > getProgress()) {
-                            currentProgress--;
+                        while (mCurrentProgress > getProgress()) {
+                            mCurrentProgress--;
                             setCurrentValue();
                             postInvalidate();
                             try {
@@ -135,9 +133,8 @@ public class CarLoadingViewTwo extends View {
                             }
                         }
 
-                        while (currentProgress < getProgress()) {
-                            isReset = false;
-                            currentProgress++;
+                        while (mCurrentProgress < getProgress()) {
+                            mCurrentProgress++;
                             setCurrentValue();
                             postInvalidate();
                             try {
@@ -152,18 +149,6 @@ public class CarLoadingViewTwo extends View {
         }).start();
 
     }
-
-    private boolean isBackFinished = true;
-
-    public boolean isBackFinished() {
-        return isBackFinished;
-    }
-
-    public void setBackFinished(boolean backFinished) {
-        isBackFinished = backFinished;
-    }
-
-    private int currentProgress;
 
     private void initPaint() {
         mPaintInside = getPaint(false);
@@ -280,7 +265,7 @@ public class CarLoadingViewTwo extends View {
      */
     private void drawArcOutside(Canvas canvas) {
         mPath.reset();
-        mPath.addArc(mRectOval, mStartAngle + currentProgress, mSwipeAngle - currentProgress);
+        mPath.addArc(mRectOval, mStartAngle + mCurrentProgress, mSwipeAngle - mCurrentProgress);
         mPathMeasure.setPath(mPath, false);
         mPathMeasure.getPosTan(mPathMeasure.getLength() * mCurrentValue, mPos, mTan);
         mPaintOutside.setShader(mSweepGradient);
@@ -294,7 +279,7 @@ public class CarLoadingViewTwo extends View {
      */
     private void drawArcLoading(Canvas canvas) {
         mPath.reset();
-        mPath.addArc(mRectOval, mStartAngle, currentProgress == 0 ? 0.01f : currentProgress);
+        mPath.addArc(mRectOval, mStartAngle, mCurrentProgress == 0 ? 0.01f : mCurrentProgress);
         mPathMeasure.setPath(mPath, false);
         mPathMeasure.getPosTan(mPathMeasure.getLength() * mCurrentValue, mPos, mTan);
 
@@ -317,7 +302,7 @@ public class CarLoadingViewTwo extends View {
      */
     private void setCurrentValue() {
 //        mCurrentValue += mProgress * 1.0 / mSwipeAngle;
-        mCurrentValue += currentProgress * 1.0 / mSwipeAngle;
+        mCurrentValue += mCurrentProgress * 1.0 / mSwipeAngle;
         if (mCurrentValue >= 1) {
             mCurrentValue = 1;
         }

@@ -25,7 +25,6 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-                    Log.e("JP", "收到消息--->" + msg.what);
                     if(mRatio <= 1) {
                         mRatio += 0.01;
                         mCarAnotherLoadingView.setRatio(mRatio);
@@ -78,7 +77,6 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
     }
 
     public void ratioDown(View view) {
-//        mHandler.removeCallbacksAndMessages(null);
         mCarAnotherLoadingView.setBackFinished(false);
         txtContinue.setVisibility(View.VISIBLE);
         mHandler.sendEmptyMessage(2);
