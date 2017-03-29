@@ -77,7 +77,6 @@ public class CarLoadingViewTwoActivity extends AppCompatActivity{
     }
 
     public void ratioDown(View view) {
-        mCarAnotherLoadingView.setBackFinished(false);
         txtContinue.setVisibility(View.VISIBLE);
         mHandler.sendEmptyMessage(2);
         mHandler.postDelayed(new Runnable() {
